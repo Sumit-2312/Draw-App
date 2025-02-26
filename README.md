@@ -82,3 +82,24 @@ Learn more about the power of Turborepo:
 - [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
 - [Configuration Options](https://turbo.build/repo/docs/reference/configuration)
 - [CLI Usage](https://turbo.build/repo/docs/reference/command-line-reference)
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------
+
+- Initialized any empty turborepo project
+- Deleted the docs app
+- added the http-server and ws-server
+- Added the package.json folder in both by running ( npm inti -y)
+
+- Added the tsconfig.json in both the serves manually become we do not needed the pre filled tsconfig file
+
+- Extends/imported the base.json file in the tsconfig.json file and updated the package.json file of serves 
+
+- Added a build,dev, start scrips to both the project
+- As we have changed the package.json we need to run npm i 
+- Writeen a boiler plate code for http-server and ws-server
+
+- Write the signup,singin and create-room endpoint in http-server
+- Write the middleware that decodes the token and gate the create-room enpoint
