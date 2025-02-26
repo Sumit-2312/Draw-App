@@ -15,6 +15,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@repo/backend-common": "*",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/ws": "^8.5.14",
     "jsonwebtoken": "^9.0.2",

@@ -1,7 +1,7 @@
 // Import the WebSocketServer class from the "ws" package
 import { WebSocketServer } from "ws";
 import jwt from 'jsonwebtoken'
-const JWT_SECRET_KEY = "121093"
+import {JWT_SECRET_KEY} from '@repo/backend-common/config'
 
 // Create a new WebSocket server listening on port 8080
 const wss = new WebSocketServer({ port: 8080 });
