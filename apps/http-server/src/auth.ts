@@ -1,7 +1,8 @@
 import express, { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET_KEY = "24724";
+import {JWT_SECRET_KEY} from '@repo/backend-common/config'
+
 
 export default function auth(req: Request, res: Response, next: NextFunction) {
     const authHeader = req.headers['authorization'];    // this will return the header provided by the user
@@ -13,14 +14,13 @@ export default function auth(req: Request, res: Response, next: NextFunction) {
     }
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET_KEY);
+        const decoded = jwt.verify(token, JWT_SECRET_KEY) as {userId: string};
 
         if (!decoded.userId) {
             res.status(403).json({ message: "Invalid token" });
             return
         }
-
-        req.userId = decoded.userId; // Store userId in request object
+        req.body.userId = decoded.userId; // Store userId in request object
         next();
     } catch (err) {
         res.status(403).json({ message: "Invalid token" });

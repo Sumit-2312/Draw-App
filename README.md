@@ -103,3 +103,5 @@ Learn more about the power of Turborepo:
 
 - Write the signup,singin and create-room endpoint in http-server
 - Write the middleware that decodes the token and gate the create-room enpoint
+
+-- How to add a commong package --> cohort excalidraw first video 1:43:00
