@@ -1,4 +1,5 @@
 import express from 'express';
+import auth from './auth';
 const userRouter = express.Router();
 
 userRouter.post("/signup",async( req,res)=>{
@@ -32,8 +33,7 @@ userRouter.post("/signin",async(req,res)=>{
     return;
 })
 
-
-userRouter.post("/create-room",async(req,res)=>{
+userRouter.post("/create-room",auth,async(req,res)=>{
 
 })
 
