@@ -2,8 +2,8 @@
   "name": "@repo/common",
   "version": "1.0.0",
   "main": "index.js",
-  "exports":{
-    "./zodSchema"  : "./src/zod.ts"
+  "exports": {
+    "./zodSchema": "./src/zod.ts"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -14,5 +14,8 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "zod": "^3.24.2"
+  }
 }

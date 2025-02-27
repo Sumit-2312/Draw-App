@@ -104,4 +104,16 @@ Learn more about the power of Turborepo:
 - Write the signup,singin and create-room endpoint in http-server
 - Write the middleware that decodes the token and gate the create-room enpoint
 
+------------------------------------------------------------------------------------------------------------
+
+
 -- How to add a commong package --> cohort excalidraw first video 1:43:00
+-- What do we get in request parameter in ws library on connection
+    Key properties of req:
+    req.url – The requested WebSocket URL (including query parameters).
+    req.headers – An object containing HTTP headers.
+    req.socket – The TCP socket instance of the connection 
+    
+------------------------------------------------------------------------------------------------------------
+
+
