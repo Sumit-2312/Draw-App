@@ -1,5 +1,7 @@
 import express from 'express';
 import auth from './auth';
+import {PsClient} from '@repo/backend-common/db'
+
 const userRouter = express.Router();
 
 userRouter.post("/signup",async( req,res)=>{

@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+// relationships in prisma
+
+// one to one relationship
+    // this states that one user can have one profile and one profile can have one user
+    // this is achieved by adding a field in the profile table which references the id field in the user table
+    // this field will not be created in the database but it will be used to create a relationship between the user and profile
+    // the field in the profile table will be of type User and it will have the relation decorator which will have the fields and references 
+   
+// one to many relationship
+    // this states that one user can have multiple posts and one post can have one user
+    // this is achieved by adding a field in the post table which references the id field in the user table
+    // this field will not be created in the database but it will be used to create a relationship between the user and post
+    // the field in the post table will be of type User and it will have the relation decorator which will have the fields and references
+
+// many to one relationship
+    // this states that many posts can have one user
+    // this is achieved by adding a field in the post table which references the id field in the user table
+    // this field will not be created in the database but it will be used to create a relationship between the user and post
+    // the field in the post table will be of type User and it will have the relation decorator which will have the fields and references
+
+// many to many relationship
+    // this states that many users can have many posts
+    // this is achieved by creating a new table which will have the foreign keys of the user and post table
+    // this table will have the fields of the user and post table and it will have the relation decorator which will have the fields and references
+
+
+    
+model User {
+    id        Int      @id @default(autoincrement())  
+    username  String  
+    email     String   @unique
+    password  String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    chat      Chat[]   // One-to-Many with Chat
+    member    RoomMember[] // Many-to-Many via RoomMember
+    admin     Room[]  @relation("Admin")  // One-to-Many (User -> Room)
+}
+
+model Chat {
+  id        Int  @id @default(autoincrement())
+  message   String
+  userId    Int
+  roomId    Int 
+  room      Room @relation(fields: [roomId], references: [id])
+  user      User @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RoomMember {
+  id        Int  @id @default(autoincrement())
+  roomId    Int 
+  userId    Int
+  room      Room @relation(fields: [roomId], references: [id])
+  user      User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, roomId]) // Prevents duplicate memberships
+  // prevent same user from joining the same room multiple times
+}
+
+model Room {
+  id        Int  @id @default(autoincrement())
+  name      String
+  adminId   Int  // Changed from adminName (must match User.id)
+
+  chat      Chat[] // One-to-Many with Chat
+  admin     User  @relation("Admin", fields: [adminId], references: [id]) 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members   RoomMember[] // Many-to-Many via RoomMember
+}

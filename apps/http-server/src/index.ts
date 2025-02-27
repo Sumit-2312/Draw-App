@@ -1,6 +1,5 @@
 import express from 'express';
 import { userRouter } from './userRoutes';
-import {starter} from '@repo/backend-common/db'
 const app = express();
 app.use(express.json());
 

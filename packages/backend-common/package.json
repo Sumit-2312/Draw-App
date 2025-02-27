@@ -2,18 +2,25 @@
   "name": "@repo/backend-common",
   "version": "1.0.0",
   "main": "index.js",
-  "exports":{
-    "./config" : "./src/config.ts",
-    "./db" : "./src/db.ts"
+  "exports": {
+    "./config": "./src/config.ts",
+    "./db": "./src/db.ts"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
-    "@repo/typescript-config": "*"
+    "@repo/typescript-config": "*",
+    "@types/node": "^22.13.5",
+    "prisma": "^6.4.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "@prisma/client": "^6.4.1"
+  }
 }
