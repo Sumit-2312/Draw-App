@@ -55,6 +55,8 @@ model Chat {
   message   String
   userId    Int
   roomId    Int 
+
+  
   room      Room @relation(fields: [roomId], references: [id])
   user      User @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
@@ -65,6 +67,7 @@ model RoomMember {
   id        Int  @id @default(autoincrement())
   roomId    Int 
   userId    Int
+
   room      Room @relation(fields: [roomId], references: [id])
   user      User @relation(fields: [userId], references: [id])
 

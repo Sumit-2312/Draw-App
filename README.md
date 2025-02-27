@@ -113,6 +113,14 @@ Learn more about the power of Turborepo:
     req.url – The requested WebSocket URL (including query parameters).
     req.headers – An object containing HTTP headers.
     req.socket – The TCP socket instance of the connection 
+
+-- How to iniitalize prisma 
+   - npx i prisma
+   - npx prisma init
+   - write down the schema as per need
+   - npx prisma migrate dev --name "name of migration"
+   - npx generate prisma --> generates the prisma client in nodemodules/@prismaclient
+   - import the prisma client
     
 ------------------------------------------------------------------------------------------------------------
 
