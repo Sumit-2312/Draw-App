@@ -14,16 +14,16 @@ export default function auth(req: Request, res: Response, next: NextFunction) {
     }
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET_KEY) as {userId: string};
+        const decoded = jwt.verify(token, JWT_SECRET_KEY) as {id: Int16Array};
 
-        if (!decoded.userId) {
+        if (!decoded.id) {
             res.status(403).json({ message: "Invalid token" });
             return
         }
-        req.body.userId = decoded.userId; // Store userId in request object
+        req.body.userId = decoded.id; // Store userId in request object
         next();
     } catch (err) {
-        res.status(403).json({ message: "Invalid token" });
+        res.status(403).json({ message: "Invalid token"});
         return 
     }
 }

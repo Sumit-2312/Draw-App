@@ -108,7 +108,40 @@ userRouter.post("/signin",async(req,res)=>{
 })
 
 userRouter.post("/create-room",auth,async(req,res)=>{
-
+    try{
+        const {roomName,userId} = req.body;
+        const room = await PsClient.room.findFirst({
+            where:{
+                name: roomName
+            }
+        })
+        if(room){
+            res.status(403).json({
+                message: "Room with this name already exist please try another name"
+            })
+            return;
+        }
+    
+        const newRoom = await PsClient.room.create({
+            data:{
+                name: roomName,
+                adminId: userId
+            }
+        })
+    
+        res.status(200).json({
+            message: "Room is created",
+            newRoom
+        })
+        return;
+    }
+    catch(error){
+        res.status(403).json({
+            //@ts-ignore
+            error: error.message
+        })
+        return;
+   }
 })
 
 
