@@ -144,5 +144,60 @@ userRouter.post("/create-room",auth,async(req,res)=>{
    }
 })
 
+userRouter.post("/join-Room",auth,async(req,res)=>{
+    try{
+        const {userId, roomName} = req.body;
+        // userId will tell which user want's to join the room
+        // roomName will tell which room does the user wants to join
+
+        const room = await PsClient.room.findFirst({
+            where:{
+                name: roomName
+            }
+        })
+
+        if(!room){
+            res.status(403).json({
+                message:"No such room exists"
+            })
+            return;
+        }
+
+        const presentAlready = await PsClient.roomMember.findFirst({
+            where:{
+                userId : userId,
+                roomId : room.id
+            }
+        })
+
+        if(presentAlready){
+            res.status(200).json({
+                message: "You are already in this room"
+            })
+            return;
+        }
+
+        const roomMember = await PsClient.roomMember.create({
+            data:{
+                userId: userId,
+                roomId: room.id
+            }
+        })
+        res.status(200).json({
+            message: "You are added to the room",
+            roomMember
+        })
+        return;
+
+    }
+    catch(error){
+        res.status(403).json({
+            //@ts-ignore
+            error: error.message
+        })
+        return;
+   }
+})
+
 
 export {userRouter};
