@@ -121,6 +121,11 @@ Learn more about the power of Turborepo:
    - npx prisma migrate dev --name "name of migration"
    - npx generate prisma --> generates the prisma client in nodemodules/@prismaclient
    - import the prisma client
+
+-- how could we take any parameters in the endpoint like /chat/123 or /chat/899
+    - by using the /chat:id   --> use params
+    - by using the wild card --> /chat/*    --> use URLSearchParams 
+    - /chat?filter=qe00   --> in this case we can get the query as req.query
     
 ------------------------------------------------------------------------------------------------------------
 

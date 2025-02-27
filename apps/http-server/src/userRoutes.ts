@@ -61,7 +61,6 @@ userRouter.post("/signup",async( req,res)=>{
     }
 })
 
-
 userRouter.post("/signin",async(req,res)=>{
 
    try{
@@ -197,6 +196,46 @@ userRouter.post("/join-Room",auth,async(req,res)=>{
         })
         return;
    }
+})
+
+userRouter.get("/chat",auth,async(req,res )=>{
+    try{
+        const roomId = Number( req.query.roomId);
+        const {userId} = req.body;
+
+        const room = await PsClient.room.findFirst({
+            where:{
+                id:roomId
+            }
+        })
+
+        if(!room){
+            res.status(403).json({
+                message:"This room does not exist",
+            })
+            return;
+        }
+
+        const userChats = await PsClient.chat.findMany({
+            where:{
+                userId:userId,
+                roomId: roomId,
+            }
+        })
+
+        res.status(200).json({
+             userChats
+        })
+        return;
+    }
+    catch(error){
+        res.status(403).json({
+            //@ts-ignore
+            error: error.message
+        })
+        return;
+    }
+
 })
 
 
