@@ -1,16 +1,17 @@
 // Import the WebSocketServer class from the "ws" package
-import { WebSocketServer } from "ws";
+import WebSocket,{ WebSocketServer } from "ws";
 import jwt from 'jsonwebtoken'
 import {JWT_SECRET_KEY} from '@repo/backend-common/config'
 
 // Create a new WebSocket server listening on port 8080
 const wss = new WebSocketServer({ port: 8080 });
+let allSockets: WebSocket[] = [];
 
 console.log("server created");
 
 
 // Event listener for new client connections
-wss.on("connection", function connection(socket, request) {
+wss.on("connection", function connection(socket: WebSocket, request) {
 
     const url = request.url;
     const queries = url?.split('?')[1];   // queries will be the array of base url , all other queries --> so to get all other queries we have to use [1]
@@ -32,17 +33,23 @@ wss.on("connection", function connection(socket, request) {
         return;
     }
 
+    allSockets.push(socket);  // pushed the current socket to all the users socket array
+
 
     console.log("You are connected to the ws-server");
 
-    // Listen for messages sent by the connected client
+
+
+    // when an user connect we get its socket to send the message and through the jwt we can get the user's details also, his room, all his chats
+    // by matching the room we can actually send the message to all the sockets present in that specific group
+
     socket.on("message", function message(data) {
-        // Echo the received message back to the client
         socket.send(data);
     });
 
     // Event listener for when the client disconnects
     socket.on("close", () => {
+        allSockets = allSockets.filter((currentsocket)=>currentsocket !== socket)
         console.log("Socket has been closed");
     });
 });
