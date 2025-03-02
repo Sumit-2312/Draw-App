@@ -1,10 +1,10 @@
 
-import Signup from "../../components/signupCard"
+import Signin from "../../components/sigin-component"
 
-export default function SingupPage(){
+export default function SinginPage(){
     return (
         <div className="h-screen w-screen bg-black flex flex-col items-center justify-center">
-            <Signup/>
+            <Signin/>
         </div>
     )
 }
