@@ -257,5 +257,32 @@ userRouter.get("/chat",auth,async(req,res )=>{
 
 })
 
+userRouter.get("/chat/:slug",auth,async(req,res)=>{
+   try{
+        const slug = req.params.slug;
+        const room = await PsClient.room.findFirst({
+            where:{
+                name: slug
+            }
+        });
+        if(!room){
+            res.status(404).json({
+                message:"No such room exists"
+            })
+            return;
+        }
+        res.status(200).json({
+            roomId: room.id
+        })
+        return;
+   }
+   catch(error:any){
+    res.status(404).json({
+        message: error.message
+    })
+    return;
+   }
+})
+
 
 export {userRouter};
