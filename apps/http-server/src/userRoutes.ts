@@ -216,10 +216,29 @@ userRouter.get("/chat",auth,async(req,res )=>{
             return;
         }
 
+        const isMember = await PsClient.roomMember.findFirst({
+            where:{
+                roomId : roomId,
+                userId : userId
+            }
+        })
+
+        if(!isMember){
+            res.status(403).json({
+                message:" You are not a member of this room"
+            })
+        }
+
         const userChats = await PsClient.chat.findMany({
             where:{
                 userId:userId,
                 roomId: roomId,
+            },
+
+            take: 50,
+
+            orderBy:{
+                createdAt: "desc"
             }
         })
 
