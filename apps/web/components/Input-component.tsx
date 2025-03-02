@@ -1,6 +1,6 @@
-export default function Input({type,placeholder,style}){
+export default function Input({onChange,type,placeholder,style}){
     return(
-        <input type={type} placeholder={placeholder}  style={{
+        <input onChange={onChange} type={type} placeholder={placeholder}  style={{
             backgroundColor:"white",
             color: "black",
             padding: "10px 10px 10px 3px",
