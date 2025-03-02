@@ -31,12 +31,14 @@ wss.on("connection", function connection(socket: WebSocket, request) {
         const searchParams = new URLSearchParams(queries); // Parses query parameters by using map data structure
     
         try{
-            const token = searchParams.get('token') ?? ""; // Get the token from query params
+            const token = searchParams.get('token') || ""; // Get the token from query params
             console.log(token);
             
-             decoded = jwt.verify(token, JWT_SECRET_KEY) as { userId: number };
+            decoded = jwt.verify(token, JWT_SECRET_KEY) as { id: number };
+            console.log(decoded);
             
-            if (!decoded || !decoded.userId) {
+            
+            if (!decoded || !decoded.id) {
                 console.log("socket is closed");
                 socket.close();
                 return;
@@ -46,14 +48,14 @@ wss.on("connection", function connection(socket: WebSocket, request) {
             //@ts-ignore
             console.log(error.message);
             console.log('catch logic running');
-            wss.close();
+            socket.close();
             return;
         }
 
         // when a user connects to the sever we will add the user to the users array if it does not exists currently
         users.push({
             //@ts-ignore
-            userId: decoded?.userId,
+            userId: decoded?.id,
             roomId: [], // Initially, the user is not in any room
             ws: socket
         });
@@ -101,8 +103,8 @@ wss.on("connection", function connection(socket: WebSocket, request) {
             const isMember = await PsClient.roomMember.findFirst({
                 where:{
                     roomId : data.roomId,
-                    userId : decoded.userId
-                }
+                    userId : decoded.id
+                 }
             })
 
             if (!isMember) {
@@ -115,7 +117,7 @@ wss.on("connection", function connection(socket: WebSocket, request) {
             const newChat = await PsClient.chat.create({
                 data:{
                     message: data.message,
-                    userId: decoded.userId ,
+                    userId: decoded.id ,
                     roomId: data.roomId
                 }
             })
