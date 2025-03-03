@@ -1,10 +1,16 @@
 "use client";
 
-import Link from "next/link";
+// TypeScript types for the props
+interface ButtonProps {
+  onClick: () => void; // onClick should be a function that returns nothing
+  variant: "variant1" | "variant2"; // Only allow variant1 or variant2
+  text: string; // Text for the button
+}
 
-export default function Button({ variant, text, href }) {
+export default function Button({ onClick, variant, text }: ButtonProps) {
+  // Define button styles for different variants
   const buttonStyle = {
-    "variant1": {
+    variant1: {
       backgroundColor: "green",
       color: "white",
       fontWeight: "bold",
@@ -12,7 +18,7 @@ export default function Button({ variant, text, href }) {
       height: "100%",
       border: "none",
     },
-    "variant2": {
+    variant2: {
       backgroundColor: "black",
       color: "white",
       padding: "10px 10px 10px 3px",
@@ -21,11 +27,10 @@ export default function Button({ variant, text, href }) {
     },
   };
 
+  // Render the button with styles and text
   return (
-    <Link href={href}>
-      <button style={buttonStyle[variant]}>
-        {text}
-      </button>
-    </Link>
+    <button onClick={onClick} style={buttonStyle[variant]}>
+      {text}
+    </button>
   );
 }
