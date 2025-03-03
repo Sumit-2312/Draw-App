@@ -1,10 +1,26 @@
-import Input from "../../../components/Input-component"
+"use client";
+import Input from "../../../components/Input-component";
+import { useState } from 'react';
+
+// Task
+// When the page renders fetch all the chats from the backend of the room with roomId present in the url
+// Render all the chats 
+// Add functinality to the send button and input box
 
 export default function Room({params}:{
     params: {
         slug: string
     }
 }){
+
+    const [message,setMessage] = useState<string|null> (null);
+
+    const handleChange = (e)=>{
+        setMessage(e.target.value);
+    }
+    const handleClick = async()=>{
+        // chat should be sent to the ws server to propogate to all the users 
+    }
    
     return(
         <div className="h-screen w-screen bg-black flex flex-col items-center justify-center">
@@ -27,8 +43,8 @@ export default function Room({params}:{
                 </div>
 
                 <div className="input flex w-full ">
-                    <input type="text" placeholder="Enter message"  className="bg-zinc-900 text-white px-5 py-3 w-full"/>  
-                    <button className="px-10 bg-green-800 text-white font-bold">
+                    <input onChange={handleChange} type="text" placeholder="Enter message"  className="bg-zinc-900 text-white px-5 py-3 w-full"/>  
+                    <button onClick={handleClick} className="px-10 bg-green-800 text-white font-bold">
                         Send
                     </button>            
                 </div>
