@@ -1,18 +1,18 @@
 "use client";
 import axios from "axios";
 import  Link  from "next/link";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { useRef } from "react";
 export default function Signin(){
 
     const passref = useRef<HTMLInputElement>(null);
     const emailref = useRef<HTMLInputElement>(null);
     const nameref = useRef<HTMLInputElement>(null);
+    const router = useRouter();
     const handleClick = async()=>{
         const name = nameref.current?.value;
         const email = emailref.current?.value;
         const password = passref.current?.value;
-        const router = useRouter();
 
         const response = await axios.post('http://localhost:3001/user/signin',{
             username:name,

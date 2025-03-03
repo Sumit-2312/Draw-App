@@ -227,6 +227,7 @@ userRouter.get("/chat",auth,async(req,res )=>{
             res.status(403).json({
                 message:" You are not a member of this room"
             })
+            return;
         }
 
         const userChats = await PsClient.chat.findMany({

@@ -124,6 +124,7 @@ wss.on("connection", function connection(socket: WebSocket, request) {
                     users.forEach((user) => {  // iterate to each user and check if he is a part of the roomId the current user sends us
                         if (user.roomId.includes(data.roomId)) {  // if he is, then we will send he the message using his ws socket 
                             user.ws.send(JSON.stringify({
+                                type: "chat",
                                 message: data.message,
                                 roomId: data.roomId
                             }));
