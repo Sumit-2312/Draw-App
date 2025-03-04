@@ -1,6 +1,5 @@
 "use client";
 
-import { log } from "console";
 import { useEffect, useState } from "react";
 
 export default function ChatInput({roomId,setChats}){ // we have got the room id from the parent component now we can use it to send request to the server when we click on the send button and we can send the message written in the input field to the chat of the room with that roomId
@@ -35,7 +34,7 @@ export default function ChatInput({roomId,setChats}){ // we have got the room id
 
         wss.onopen = () => {
             console.log("Connected to WebSocket");
-            wss.send(JSON.stringify({ type: "join_room", roomId }));  // ✅ Send only after onopen
+            wss.send(JSON.stringify({ type: "join_room", roomId: Number(roomId) }));  // ✅ Send only after onopen
             
             setSocket(wss);
             console.log("Setting up WebSocket...");
