@@ -239,7 +239,7 @@ userRouter.get("/chat",auth,async(req,res )=>{
             take: 50,
 
             orderBy:{
-                createdAt: "desc"
+                createdAt: "asc"
             }
         })
 

@@ -64,15 +64,17 @@ wss.on("connection", function connection(socket: WebSocket, request) {
 
     // Listen for messages sent by the connected client
     socket.on("message", async function message(rawData) {
+
         try {
             // rawData is usually string therefore we need to parse the data to the json
             const data = JSON.parse(rawData.toString()); // Parse incoming data
+            console.log(data);
 
             if (data.type === "join_room") {
                 try {
                     const room = await PsClient.room.findFirst({
                         where: {
-                            id: data.roomId
+                            id: Number(data.roomId)
                         }
                     });
 
@@ -91,13 +93,15 @@ wss.on("connection", function connection(socket: WebSocket, request) {
                     socket.send(JSON.stringify({
                         message: "You have joined the room successfully"
                     }));
+                
                 } catch (error) {
                     console.log("Error joining room:", error);
                 }
                 return;
             } 
             
-            else if (data.type === "chat") {
+           else  if (data.type === "chat") {
+                console.log("Entered in chat endpoint in ws server")
                 try {
                     const isMember = await PsClient.roomMember.findFirst({
                         where:{
@@ -132,10 +136,11 @@ wss.on("connection", function connection(socket: WebSocket, request) {
                     });
                 } catch (error) {
                     console.log("Error sending chat message:", error);
+                    return;
                 }
             } 
             
-            else if (data.type === "leave_room") {
+           else  if (data.type === "leave_room") {
                 try {
                     users.forEach((user) => {
                         if (user.ws === socket) {

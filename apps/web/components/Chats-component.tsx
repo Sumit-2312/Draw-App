@@ -13,6 +13,7 @@ async function getChats(roomId:any,setChats){
         }
     })
     const chats = response.data.userChats;  // we will have   chats: [{ message: "hello", userId: 1, roomId: 1, createdAt: "2021-09-29T07:00:00.000Z" }]
+    console.log(chats);
     setChats(chats);
 }
 
@@ -46,7 +47,7 @@ export default function Chats({roomId}){
 
         </  div>
         <div>
-            <ChatInput roomId={roomId} chats={chats} setChats={setChats} />
+            <ChatInput roomId={roomId} setChats={setChats} />
         </div>
        </div>
     )
