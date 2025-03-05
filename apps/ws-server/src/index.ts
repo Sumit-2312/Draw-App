@@ -129,14 +129,14 @@ wss.on("connection", function connection(socket: WebSocket, request) {
                     console.log("reached to for loop");
 
                     users.forEach((user) => {  // iterate to each user and check if he is a part of the roomId the current user sends us
+                        // we will pass the user id in the frontend also so that we can manipulate the styling of the chat messages accordingly
                         if (Array.isArray(user.roomId) && user.roomId.includes(Number(data.roomId))) {
                             if (user.ws.readyState === WebSocket.OPEN) {
                                 user.ws.send(JSON.stringify({
                                     type: "chat",
                                     message: data.message,
-                                    roomId: Number(data.roomId
-
-                                    )
+                                    roomId: Number(data.roomId),
+                                    userId : Number(data.userId)
                                 }));
                                 console.log(`📩 Message sent to user ${user.userId} in room ${data.roomId}`);
                             } else {

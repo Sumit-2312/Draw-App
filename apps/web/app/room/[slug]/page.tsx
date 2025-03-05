@@ -1,11 +1,11 @@
-
-import ChatInput from "../../../components/Chat-input";
 import Chats from "../../../components/Chats-component";
 
 
 
 
 export default async function Room({ params }: { params: { slug: number } }) {
+
+    
 
     return(
         <div className="h-screen w-screen bg-black flex flex-col items-center justify-center">
@@ -24,7 +24,7 @@ export default async function Room({ params }: { params: { slug: number } }) {
 
             </div>
 
-            <div className="h-5/6 w-1/2 bg-zinc-200 flex flex-col items-center justify-between">
+            <div className="h-5/6 w-1/2  bg-zinc-200 flex flex-col items-center justify-between">
                 <Chats roomId={params.slug}/>
             </div>
         </div>

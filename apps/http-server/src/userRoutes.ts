@@ -285,5 +285,13 @@ userRouter.get("/chat/:slug",auth,async(req,res)=>{
    }
 })
 
+userRouter.get("/userId",auth,async(req,res )=>{
+    const {userId} = req.body;
+    res.status(200).json({
+        userId : userId
+    })
+    return;
+})
+
 
 export {userRouter};
