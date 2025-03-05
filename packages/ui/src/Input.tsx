@@ -9,7 +9,7 @@ export default function Input({label,type,placeholder}:{
             <h4 className="text-black font-bold">
                 {label}
             </h4>
-            <input className="w-full px-3 py-5 "  type={type} placeholder={placeholder}  />
-        </div>
+            <input className="inline-block w-full py-2 px-1 rounded border border-black " type={type} placeholder={placeholder} />
+            </div>
     )
 }

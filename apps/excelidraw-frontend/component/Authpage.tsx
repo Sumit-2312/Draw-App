@@ -3,7 +3,7 @@ import Input from '@repo/ui/Input'
 export default function AuthPage({isSignin}:{isSignin: boolean}){
     return(
         <div className="h-screen w-screen flex justify-center items-center">
-            <div className=" px-8 py-10 h-96 w-96 text-black bg-white flex gap-3 flex-col justify-center items-center rounded-xl shadow-lg">
+            <div className=" px-8 py-10  w-96 text-black bg-white flex gap-3 flex-col justify-center items-center rounded-xl shadow-lg">
                 <h1 className="text-3xl font-bold">{isSignin ? "Sign in" : "Sign up"}</h1>
                 <div className='flex flex-col w-full gap-5'>
                     <Input label={"Username"} placeholder={"Enter username"} type={"text"} />

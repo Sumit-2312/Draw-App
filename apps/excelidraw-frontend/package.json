@@ -1,5 +1,5 @@
 {
-  "name": "excelidraw",
+  "name": "excelidraw-frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,20 +9,17 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "15.2.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "next": "15.2.1"
   },
   "devDependencies": {
-    "@repo/typescript-config": "*",
     "@repo/ui": "*",
-    "@tailwindcss/postcss": "^4",
+    "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.5.3",
-    "tailwindcss": "3",
-    "typescript": "^5"
+    "@tailwindcss/postcss": "^4",
+    "tailwindcss": "^3"
   }
 }
