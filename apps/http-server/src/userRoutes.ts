@@ -244,7 +244,7 @@ userRouter.get("/chat",auth,async(req,res )=>{
         })
 
         res.status(200).json({
-             userChats
+             userChats 
         })
         return;
     }

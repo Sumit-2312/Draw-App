@@ -73,15 +73,15 @@ wss.on("connection", function connection(socket: WebSocket, request) {
 
             if (data.type === "join_room") {
                 try {
-                    const room = await PsClient.room.findFirst({
+                    const isMember = await PsClient.roomMember.findFirst({
                         where: {
                             id: Number(data.roomId)
                         }
                     });
 
-                    if (!room) {
+                    if (!isMember) {
                         socket.send(JSON.stringify({
-                            message: "No such room exists, try joining another room"
+                            message: "You are not member of this room"
                         }));
                         return;
                     }
@@ -92,7 +92,8 @@ wss.on("connection", function connection(socket: WebSocket, request) {
                     // Add the room ID to the user's room list
                     user?.roomId.push(data.roomId);
                     socket.send(JSON.stringify({
-                        message: "You have joined the room successfully"
+                        message: "You have joined the room successfully",
+                        user: user
                     }));
                 
                 } catch (error) {
@@ -127,10 +128,11 @@ wss.on("connection", function connection(socket: WebSocket, request) {
                     });
 
                     console.log("reached to for loop");
+                    console.log(users);
 
                     users.forEach((user) => {  // iterate to each user and check if he is a part of the roomId the current user sends us
                         // we will pass the user id in the frontend also so that we can manipulate the styling of the chat messages accordingly
-                        if (Array.isArray(user.roomId) && user.roomId.includes(Number(data.roomId))) {
+                        if (Array.isArray(user.roomId) && user.roomId.includes(data.roomId) && user.ws != socket ) {
                             if (user.ws.readyState === WebSocket.OPEN) {
                                 user.ws.send(JSON.stringify({
                                     type: "chat",
@@ -144,7 +146,7 @@ wss.on("connection", function connection(socket: WebSocket, request) {
                             }
                         } else {
                             console.log(`❌ User ${user.userId} is NOT in room ${data.roomId}, message not sent.`);
-                            console.log("User's room list:", user.roomId);
+                            console.log(user)
                         }
                     });
                     console.log("Passed the for loop");

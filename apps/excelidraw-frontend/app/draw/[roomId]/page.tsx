@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import axios from 'axios';
 
 type DrawnShape = {
   type: "rectangle";
@@ -24,13 +25,17 @@ type DrawnShape = {
   id: string;
 } 
 
-export default function Page() {
+export default function Page({params}:{params: {roomId : string}}) {
+  
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [shape, setShape] = useState<string>("rectangle");
   const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
   const [drawnShapes, setDrawnShapes] = useState<DrawnShape[]>([]);
   const [isErasing, setIsErasing] = useState(false);
+  const [socket , setSocket] = useState<WebSocket>()
+
+  
 
   // Check if a point is inside a rectangle
   const isPointInRectangle = (
@@ -96,6 +101,7 @@ export default function Page() {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
 
     // Ensure canvas matches its display size
     canvas.width = canvas.clientWidth;
@@ -226,11 +232,11 @@ export default function Page() {
           ctx.stroke();
         }
       });
-
       // Draw current shape in progress
       ctx.beginPath();
       ctx.strokeStyle = "white";
       
+
       if (shape === "rectangle") {
         const width = x - startPoint.x;
         const height = y - startPoint.y;
@@ -260,8 +266,7 @@ export default function Page() {
         ctx.stroke();
       }
     };
-
-    const stopDrawing = (e: MouseEvent) => {
+    const stopDrawing = async(e: MouseEvent) => {
       // End erasing mode
       if (isErasing) {
         setIsErasing(false);
@@ -269,53 +274,92 @@ export default function Page() {
       }
       
       if (!isDrawing || !startPoint) return;
-
+    
       const { x, y } = getCanvasCoordinates(e);
       const uniqueId = Date.now().toString();
+      const roomId = (await params).roomId;
       
       if (shape === "rectangle") {
-        setDrawnShapes((prev) => {
-          const width = x - startPoint.x;
-          const height = y - startPoint.y;
-          return [...prev, {
+        const width = x - startPoint.x;
+        const height = y - startPoint.y;
+        const normalizedX = width >= 0 ? startPoint.x : x;
+        const normalizedY = height >= 0 ? startPoint.y : y;
+        const absWidth = Math.abs(width);
+        const absHeight = Math.abs(height);
+        
+        socket?.send(JSON.stringify({
+          type: "chat",
+          roomId: roomId,
+          message: JSON.stringify({
             type: "rectangle",
-            x: width >= 0 ? startPoint.x : x,
-            y: height >= 0 ? startPoint.y : y,
-            width: Math.abs(width),
-            height: Math.abs(height),
+            x: normalizedX,
+            y: normalizedY,
+            width: absWidth,
+            height: absHeight,
             id: uniqueId
-          }];
-        });
+          })
+        }));
+        
+        setDrawnShapes((prev) => [...prev, {
+          type: "rectangle",
+          x: normalizedX,
+          y: normalizedY,
+          width: absWidth,
+          height: absHeight,
+          id: uniqueId
+        }]);
       }
       else if (shape === "circle") {
-        setDrawnShapes((prev) => {
-          const radius = getRadius(startPoint.x, startPoint.y, x, y);
-          return [...prev, {
-            type: "circle", 
-            x: startPoint.x, 
-            y: startPoint.y, 
+        const radius = getRadius(startPoint.x, startPoint.y, x, y);
+        
+        socket?.send(JSON.stringify({
+          type: "chat",
+          roomId: roomId,
+          message: JSON.stringify({
+            type: "circle",
+            x: startPoint.x,
+            y: startPoint.y,
             radius: radius,
             id: uniqueId
-          }];
-        });
+          })
+        }));
+        
+        setDrawnShapes((prev) => [...prev, {
+          type: "circle", 
+          x: startPoint.x, 
+          y: startPoint.y, 
+          radius: radius,
+          id: uniqueId
+        }]);
       }
       else if (shape === "line") {
-        setDrawnShapes((prev) => {
-          return [...prev, {
+        socket?.send(JSON.stringify({
+          type:"chat",
+          roomId: roomId,
+          message: JSON.stringify({
             type: "line",
             x1: startPoint.x,
             y1: startPoint.y, 
             x2: x, 
             y2: y,
             id: uniqueId
-          }];
-        });
+          })
+        }));
+        
+        setDrawnShapes((prev) => [...prev, {
+          type: "line",
+          x1: startPoint.x,
+          y1: startPoint.y, 
+          x2: x, 
+          y2: y,
+          id: uniqueId
+        }]);
       }
       
       setIsDrawing(false);
       setStartPoint(null);
     };
-
+    
     // Attach Event Listeners
     canvas.addEventListener("mousedown", startDrawing);
     canvas.addEventListener("mousemove", draw);
@@ -331,7 +375,53 @@ export default function Page() {
     };
   }, [isDrawing, drawnShapes, shape, isErasing]);
 
+
+  // @ts-ignore
+  useEffect(async()=>{
+
+    // first fetch all the shapes from the backend
+    const response = await axios.get(`http://localhost:3001/user/chat?roomId=${params.roomId}`,{
+      headers:{
+        Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiaWF0IjoxNzQxMjYyNTExfQ.I9lj8w8m_F1PHGgJl9lLQ_CT3KoV1NGuaoAfjAVlq0M`
+      }
+    });
+    const data = response.data;  // json object consist of array of objects
+    const userChats = data.userChats;
+    userChats.map((chat:any)=>{
+      const message = JSON.parse(chat.message);
+      setDrawnShapes((prev)=>{
+        return [...prev,message]
+      })
+    }) 
+
+    // establish a connection with the websocket server
+    const wss = new WebSocket("ws://localhost:8080?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiaWF0IjoxNzQxMjYyNTExfQ.I9lj8w8m_F1PHGgJl9lLQ_CT3KoV1NGuaoAfjAVlq0M")
+
+    wss.onopen = async()=>{
+      setSocket(wss);
+      wss.send(JSON.stringify({
+        type: "join_room",
+        roomId : (await params).roomId
+      }))
+    }
+
+    wss.onmessage = (message)=>{
+      const data = JSON.parse(message.data);
+      const newShape = JSON.parse(data.message);
+      setDrawnShapes((prev) => {
+        return [...prev, newShape];
+      });
+      console.log(newShape);
+    }
+
+    
+  },[]);
+
+
+  if(!socket) return <div> Loading ... </div>
+
   return (
+
     <div className="relative h-screen w-screen bg-white">
       <canvas 
         ref={canvasRef} 
@@ -379,3 +469,8 @@ export default function Page() {
     </div>
   );
 }
+
+
+// whenever user comes to the page, it should fetch the data from the server which will consist of the shapes drawn by the user
+// whenever user draws a shape, it should be sent to the server and saved in the database
+// whenever user erases a shape, it should be sent to the server and deleted from the database

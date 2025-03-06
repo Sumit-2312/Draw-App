@@ -52,7 +52,7 @@ model User {
 
 model Chat {
   id        Int  @id @default(autoincrement())
-  message   String
+  message   String // in case of excelidraw we will store the shapes in the messages
   userId    Int
   roomId    Int 
 
