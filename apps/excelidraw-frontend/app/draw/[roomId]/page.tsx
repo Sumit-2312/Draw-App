@@ -398,7 +398,7 @@ export default function Page({params}:{params: {roomId : string}}) {
         }) 
 
         // establish a connection with the websocket server
-        const wss = new WebSocket("ws://localhost:8080?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiaWF0IjoxNzQxMjYyNTExfQ.I9lj8w8m_F1PHGgJl9lLQ_CT3KoV1NGuaoAfjAVlq0M")
+        const wss = new WebSocket(`ws://localhost:8080?token=${localStorage.getItem("token")}`);
 
         wss.onopen = async()=>{
           setSocket(wss);

@@ -234,7 +234,6 @@ userRouter.get("/chat",auth,async(req,res )=>{
 
         const userChats = await PsClient.chat.findMany({
             where:{
-                userId:userId,
                 roomId: roomId,
             },
 

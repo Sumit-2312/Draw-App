@@ -69,13 +69,17 @@ wss.on("connection", function connection(socket: WebSocket, request) {
         try {
             // rawData is usually string therefore we need to parse the data to the json
             const data = JSON.parse(rawData.toString()); // Parse incoming data
-            console.log(data);
+            console.log(data.type,data.roomId);
 
             if (data.type === "join_room") {
                 try {
+                    console.log("Checking if the user is member of room or not...")
+                    console.log("User Id: ",decoded.id);
+                    console.log("Room Id: ",data.roomId)
                     const isMember = await PsClient.roomMember.findFirst({
                         where: {
-                            id: Number(data.roomId)
+                            roomId: Number(data.roomId),
+                            userId : decoded.id
                         }
                     });
 
@@ -130,7 +134,6 @@ wss.on("connection", function connection(socket: WebSocket, request) {
                     });
 
                     console.log("reached to for loop");
-                    console.log(users);
 
                     users.forEach((user) => {  // iterate to each user and check if he is a part of the roomId the current user sends us
                         // we will pass the user id in the frontend also so that we can manipulate the styling of the chat messages accordingly

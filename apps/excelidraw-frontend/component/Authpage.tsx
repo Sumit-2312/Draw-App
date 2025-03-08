@@ -58,7 +58,7 @@ export default function AuthPage({isSignin}:{isSignin: boolean}){
 
     return(
         <div className="h-screen w-screen bg-gradient-to-r from-indigo-950 to-black flex justify-center items-center">
-            <div className=" px-8 py-10  w-96 text-white bg-black flex gap-3 flex-col justify-center items-center rounded-xl shadow-blue-400 ">
+            <div className=" px-8 py-10  w-96 text-black bg-white flex gap-3 flex-col justify-center items-center rounded-xl shadow-blue-400 ">
                 <h1 className="text-3xl text-white-600 font-bold">{isSignin ? "Sign in" : "Sign up"}</h1>
                 <div className='flex flex-col w-full gap-5'>
                     <Input reference={usernameRef} label={"Username"} placeholder={"Enter username"} type={"text"} />
