@@ -187,15 +187,41 @@ export default function Page({params}:{params: {roomId : string}}) {
       // Handle erasing while moving (drag erase)
       if (isErasing && shape === "eraser") {
         // Check for shapes under the eraser and remove them
-        const updatedShapes = drawnShapes.filter((shape) => {
+        const updatedShapes = drawnShapes.filter((shape) => {  // drawnshapes would be an array of shapes that will be rendered on the canvas whenever there is a change in the drawnshapes state
           if (shape.type === 'rectangle') {
-            return !isPointInRectangle(x, y, shape.x, shape.y, shape.width, shape.height);
+             // this will return true if cursor lies in the rectangle 
+            // if it returns true, then we need to remove the rectangle from the drawnshapes array and send a message to the ws server with type delete and id of the rectangle which we are sending to the database while storing the shape
+            if(isPointInRectangle(x, y, shape.x, shape.y, shape.width, shape.height)){
+              // in the database we will traverse through the chats and remove the chat with the shapeId we will provide in the message
+              socket?.send(JSON.stringify({
+                type: "delete",
+                shapeId : shape.id,
+                roomId : params.roomId
+              }))
+              return false; // Remove this shape
+            }
+
+            return true;
           }
           else if (shape.type === 'circle') {
-            return !isPointInCircle(x, y, shape.x, shape.y, shape.radius);
+            if(!isPointInCircle(x, y, shape.x, shape.y, shape.radius)){
+              socket?.send(JSON.stringify({
+                type: "delete",
+                shapeId : shape.id
+              }))
+              return false; // Remove this shape  
+            }
+            return true; 
           }
           else if (shape.type === 'line') {
-            return !isPointNearLine(x, y, shape.x1, shape.y1, shape.x2, shape.y2);
+            if(!isPointNearLine(x, y, shape.x1, shape.y1, shape.x2, shape.y2)){
+              socket?.send(JSON.stringify({
+                type: "delete",
+                shapeId : shape.id
+              }))
+              return false; // Remove this shape  
+            }
+            return true;
           }
           return true;
         });
@@ -204,6 +230,7 @@ export default function Page({params}:{params: {roomId : string}}) {
         if (updatedShapes.length !== drawnShapes.length) {
           setDrawnShapes(updatedShapes);
         }
+
         return;
       }
       
@@ -380,7 +407,7 @@ export default function Page({params}:{params: {roomId : string}}) {
   useEffect(()=>{
     const insideFunction = async()=>{
           
-        // first fetch all the shapes from the backend\
+        // first fetch all the shapes from the backend
         //@ts-ignore
         const {roomId} = await params;
         const response = await axios.get(`http://localhost:3001/user/chat?roomId=${roomId}`,{
@@ -410,11 +437,19 @@ export default function Page({params}:{params: {roomId : string}}) {
 
         wss.onmessage = (message)=>{
           const data = JSON.parse(message.data);
-          const newShape = JSON.parse(data.message);
-          setDrawnShapes((prev) => {
-            return [...prev, newShape];
-          });
-          console.log(newShape);
+          if(data.type === 'chat'){
+              const newShape = JSON.parse(data.message);
+              setDrawnShapes((prev) => {
+                return [...prev, newShape];
+              });
+              console.log(newShape);
+          }
+          else if(data.type === 'delete'){
+            const shapeId = data.shapeId;
+            setDrawnShapes((prev) => {
+              return prev.filter(shape => shape.id !== shapeId);
+            });
+          }
         }
     }
     insideFunction();

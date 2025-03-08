@@ -67,122 +67,171 @@ wss.on("connection", function connection(socket: WebSocket, request) {
     socket.on("message", async function message(rawData) {
 
         try {
-            // rawData is usually string therefore we need to parse the data to the json
-            const data = JSON.parse(rawData.toString()); // Parse incoming data
-            console.log(data.type,data.roomId);
+                    // rawData is usually string therefore we need to parse the data to the json
+                    const data = JSON.parse(rawData.toString()); // Parse incoming data
+                    console.log(data.type,data.roomId);
 
-            if (data.type === "join_room") {
-                try {
-                    console.log("Checking if the user is member of room or not...")
-                    console.log("User Id: ",decoded.id);
-                    console.log("Room Id: ",data.roomId)
-                    const isMember = await PsClient.roomMember.findFirst({
-                        where: {
-                            roomId: Number(data.roomId),
-                            userId : decoded.id
-                        }
-                    });
-
-                    if (!isMember) {
-                        socket.send(JSON.stringify({
-                            message: "You are not member of this room"
-                        }));
-                        return;
-                    }
-
-                    // Find the user in the users array
-                    const user = users.find((user) => user.ws === socket);
-                    
-                    // Add the room ID to the user's room list
-                    user?.roomId.push(data.roomId);
-                    socket.send(JSON.stringify({
-                        message: "You have joined the room successfully",
-                        user: user
-                    }));
-                
-                } catch (error) {
-                    console.log("Error joining room:", error);
-                }
-                return;
-            } 
-            
-           else  if (data.type === "chat") {
-                console.log("Entered in chat endpoint in ws server")
-                console.log(data.roomId);
-                console.log(decoded.id);
-                try {
-                    const isMember = await PsClient.roomMember.findFirst({
-                        where:{
-                            roomId : Number(data.roomId),
-                            userId : decoded.id
-                        }
-                    });
-
-                    if (!isMember) {
-                        socket.send(JSON.stringify({
-                            error: "You are not a member of this room."
-                        }));
-                        return;
-                    }
-
-                     await PsClient.chat.create({
-                        data:{
-                            message: data.message,
-                            userId: decoded.id ,
-                            roomId: Number(data.roomId)
-                        }
-                    });
-
-                    console.log("reached to for loop");
-
-                    users.forEach((user) => {  // iterate to each user and check if he is a part of the roomId the current user sends us
-                        // we will pass the user id in the frontend also so that we can manipulate the styling of the chat messages accordingly
-                        if (Array.isArray(user.roomId) && user.roomId.includes(data.roomId) && user.ws != socket ) {
-                            if (user.ws.readyState === WebSocket.OPEN) {
-                                user.ws.send(JSON.stringify({
-                                    type: "chat",
-                                    message: data.message,
+                    if (data.type === "join_room") {
+                        try {
+                            console.log("Checking if the user is member of room or not...")
+                            console.log("User Id: ",decoded.id);
+                            console.log("Room Id: ",data.roomId)
+                            const isMember = await PsClient.roomMember.findFirst({
+                                where: {
                                     roomId: Number(data.roomId),
-                                    userId : Number(data.userId)
+                                    userId : decoded.id
+                                }
+                            });
+
+                            if (!isMember) {
+                                socket.send(JSON.stringify({
+                                    message: "You are not member of this room"
                                 }));
-                                console.log(`📩 Message sent to user ${user.userId} in room ${data.roomId}`);
-                            } else {
-                                console.log(`⚠️ Cannot send message, WebSocket is closed for user ${user.userId}`);
+                                return;
                             }
-                        } else {
-                            console.log(`❌ User ${user.userId} is NOT in room ${data.roomId}, message not sent.`);
-                            console.log(user)
+
+                            // Find the user in the users array
+                            const user = users.find((user) => user.ws === socket);
+                            
+                            // Add the room ID to the user's room list
+                            user?.roomId.push(data.roomId);
+                            socket.send(JSON.stringify({
+                                message: "You have joined the room successfully",
+                                user: user
+                            }));
+                        
+                        } catch (error) {
+                            console.log("Error joining room:", error);
                         }
-                    });
-                    console.log("Passed the for loop");
-                } catch (error) {
-                    console.log("Error sending chat message:", error);
-                    return;
-                }
-            } 
-            
-           else  if (data.type === "leave_room") {
-                try {
-                    users.forEach((user) => {
-                        if (user.ws === socket) {
-                            user.roomId = user.roomId.filter((room) => room !== data.roomId);
+                        return;
+                    } 
+                    
+                    else  if (data.type === "chat") {
+                        console.log("Entered in chat endpoint in ws server")
+                        console.log(data.roomId);
+                        console.log(decoded.id);
+                        try {
+                            const isMember = await PsClient.roomMember.findFirst({
+                                where:{
+                                    roomId : Number(data.roomId),
+                                    userId : decoded.id
+                                }
+                            });
+
+                            if (!isMember) {
+                                socket.send(JSON.stringify({
+                                    error: "You are not a member of this room."
+                                }));
+                                return;
+                            }
+
+                            await PsClient.chat.create({
+                                data:{
+                                    message: data.message,
+                                    userId: decoded.id ,
+                                    roomId: Number(data.roomId)
+                                }
+                            });
+
+                            console.log("reached to for loop");
+
+                            users.forEach((user) => {  // iterate to each user and check if he is a part of the roomId the current user sends us
+                                // we will pass the user id in the frontend also so that we can manipulate the styling of the chat messages accordingly
+                                if (Array.isArray(user.roomId) && user.roomId.includes(data.roomId) && user.ws != socket ) {
+                                    if (user.ws.readyState === WebSocket.OPEN) {
+                                        user.ws.send(JSON.stringify({
+                                            type: "chat",
+                                            message: data.message,
+                                            roomId: Number(data.roomId),
+                                            userId : Number(data.userId)
+                                        }));
+                                        console.log(`📩 Message sent to user ${user.userId} in room ${data.roomId}`);
+                                    } else {
+                                        console.log(`⚠️ Cannot send message, WebSocket is closed for user ${user.userId}`);
+                                    }
+                                } else {
+                                    console.log(`❌ User ${user.userId} is NOT in room ${data.roomId}, message not sent.`);
+                                    console.log(user)
+                                }
+                            });
+                            console.log("Passed the for loop");
+                        } catch (error) {
+                            console.log("Error sending chat message:", error);
+                            return;
                         }
-                    });
-                    socket.send(JSON.stringify({
-                        message: "You have left the room"
-                    }));
-                } catch (error) {
-                    console.log("Error leaving room:", error);
-                }
-                return;
-            } 
-            
-            else {
-                socket.send(JSON.stringify({
-                    message: "Entered wrong type"
-                }));
-                return;
-            }
+                    } 
+                    
+                    else  if (data.type === "leave_room") {
+                        try {
+                            users.forEach((user) => {
+                                if (user.ws === socket) {
+                                    user.roomId = user.roomId.filter((room) => room !== data.roomId);
+                                }
+                            });
+                            socket.send(JSON.stringify({
+                                message: "You have left the room"
+                            }));
+                        } catch (error) {
+                            console.log("Error leaving room:", error);
+                        }
+                        return;
+                    } 
+
+                    else if (data.type === "delete"){
+                        // here we must have the message like: type: "delete", shapeId : shapeId
+                        // we will get these two from the message and the userId from the token in decoded.id
+                        // we will traverse through the database and delete that shape and also send the message to all other subscribed users
+                        const shapeId = data.shapeId;
+                        // we will first find the entry in chat in which message field (json string) contains the shapeId
+                        const chatEntry = await PsClient.chat.findFirst({
+                            where: {
+                                message: {
+                                    contains: shapeId // Searches inside the JSON string
+                                }
+                            }
+                        });
+                        
+                        if (chatEntry) {
+                            await PsClient.chat.delete({
+                                where: { id: chatEntry.id } // Now we delete using the unique ID
+                        });
+
+                        // after deleting the chat from the database we will send the shapeid to be deleted  to the frontend to all the users withe the same roomid
+                        users.forEach((user)=>{
+                            if (Array.isArray(user.roomId) && user.roomId.includes(data.roomId) && user.ws != socket ) {
+                                if (user.ws.readyState === WebSocket.OPEN) {
+                                    user.ws.send(JSON.stringify({
+                                        type: "delete",
+                                        shapeId: data.shapeId , // this is the shape
+                                        roomId: Number(data.roomId),
+                                    }));
+                                    console.log(`📩 Message sent to user ${user.userId} in room ${data.roomId}`);
+                                } else {
+                                    console.log(`⚠️ Cannot send message, WebSocket is closed for user ${user.userId}`);
+                                }
+                            } else {
+                                console.log(`❌ User ${user.userId} is NOT in room ${data.roomId}, message not sent.`);
+                                console.log(user)
+                            }
+                        });
+                        
+                    }
+                    
+                    else {
+                        socket.send(JSON.stringify({
+                            message: "Entered wrong type"
+                        }));
+                        return;
+                    }
+                    }
+                    
+                    else {
+                        socket.send(JSON.stringify({
+                            message: "Entered wrong type"
+                        }));
+                        return;
+                    }
+
         } catch (error) {
             console.log("Error processing message:", error);
         }
