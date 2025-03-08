@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {  useEffect, useRef, useState } from "react";
 import axios from 'axios';
 
 type DrawnShape = {
@@ -377,48 +377,53 @@ export default function Page({params}:{params: {roomId : string}}) {
 
 
   // @ts-ignore
-  useEffect(async()=>{
+  useEffect(()=>{
+    const insideFunction = async()=>{
+          
+        // first fetch all the shapes from the backend\
+        //@ts-ignore
+        const {roomId} = await params;
+        const response = await axios.get(`http://localhost:3001/user/chat?roomId=${roomId}`,{
+          headers:{
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+        });
+        const data = response.data;  // json object consist of array of objects
+        const userChats = data.userChats;
+        userChats.map((chat:any)=>{
+          const message = JSON.parse(chat.message);
+          setDrawnShapes((prev)=>{
+            return [...prev,message]
+          })
+        }) 
 
-    // first fetch all the shapes from the backend
-    const response = await axios.get(`http://localhost:3001/user/chat?roomId=${params.roomId}`,{
-      headers:{
-        Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiaWF0IjoxNzQxMjYyNTExfQ.I9lj8w8m_F1PHGgJl9lLQ_CT3KoV1NGuaoAfjAVlq0M`
-      }
-    });
-    const data = response.data;  // json object consist of array of objects
-    const userChats = data.userChats;
-    userChats.map((chat:any)=>{
-      const message = JSON.parse(chat.message);
-      setDrawnShapes((prev)=>{
-        return [...prev,message]
-      })
-    }) 
+        // establish a connection with the websocket server
+        const wss = new WebSocket("ws://localhost:8080?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiaWF0IjoxNzQxMjYyNTExfQ.I9lj8w8m_F1PHGgJl9lLQ_CT3KoV1NGuaoAfjAVlq0M")
 
-    // establish a connection with the websocket server
-    const wss = new WebSocket("ws://localhost:8080?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiaWF0IjoxNzQxMjYyNTExfQ.I9lj8w8m_F1PHGgJl9lLQ_CT3KoV1NGuaoAfjAVlq0M")
+        wss.onopen = async()=>{
+          setSocket(wss);
+          wss.send(JSON.stringify({
+            type: "join_room",
+            roomId : (await params).roomId
+          }))
+        }
 
-    wss.onopen = async()=>{
-      setSocket(wss);
-      wss.send(JSON.stringify({
-        type: "join_room",
-        roomId : (await params).roomId
-      }))
+        wss.onmessage = (message)=>{
+          const data = JSON.parse(message.data);
+          const newShape = JSON.parse(data.message);
+          setDrawnShapes((prev) => {
+            return [...prev, newShape];
+          });
+          console.log(newShape);
+        }
     }
-
-    wss.onmessage = (message)=>{
-      const data = JSON.parse(message.data);
-      const newShape = JSON.parse(data.message);
-      setDrawnShapes((prev) => {
-        return [...prev, newShape];
-      });
-      console.log(newShape);
-    }
-
-    
+    insideFunction();
   },[]);
 
 
-  if(!socket) return <div> Loading ... </div>
+  if(!socket) return  <div className="flex justify-center items-center h-64">
+  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+</div>
 
   return (
 

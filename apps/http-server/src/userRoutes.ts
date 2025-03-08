@@ -200,8 +200,10 @@ userRouter.post("/join-Room",auth,async(req,res)=>{
 
 userRouter.get("/chat",auth,async(req,res )=>{
     try{
-        const roomId = Number( req.query.roomId);
+        const roomId = Number(req.query.roomId);
         const {userId} = req.body;
+        console.log("roomId:",roomId);
+        console.log("userId:",userId);
 
         const room = await PsClient.room.findFirst({
             where:{
@@ -291,6 +293,29 @@ userRouter.get("/userId",auth,async(req,res )=>{
         userId : userId
     })
     return;
+})
+
+userRouter.get('/rooms',async(req,res)=>{
+
+    try{
+        //@ts-ignore
+        const {userId} = req.query;
+        console.log(userId);
+        const roomMembers = await PsClient.roomMember.findMany({
+            where: {
+                userId: Number(userId)
+            },
+            include: {
+                room: true 
+            }
+        });
+
+        res.json(roomMembers);
+    } catch (error) {
+        console.error("Error fetching rooms:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+    
 })
 
 

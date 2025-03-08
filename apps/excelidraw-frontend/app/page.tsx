@@ -1,15 +1,20 @@
-// pages/index.js
-"use client"
-import { useState } from 'react';
+"use client";
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import AuthButton from '@/component/AuthButton';
 
 export default function ExcalidrawIntro() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const toggleMenu = () => {
+
+useEffect(() => {
+  setIsAuthenticated(!!localStorage.getItem("token"));
+}, []);
+
+const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
-  };
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
@@ -25,11 +30,11 @@ export default function ExcalidrawIntro() {
               </div>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-8">
-              <Link href="/dashboard" className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors">
+              <Link href="/My-Rooms" className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors">
                 Dashboard
               </Link>
              <AuthButton/>
-              {localStorage.getItem("token") ? null :
+              {isAuthenticated? null :
                 <Link href="/signup" className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm transition-colors">
                 Sign Up
               </Link>}

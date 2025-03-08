@@ -6,7 +6,6 @@ import Chats from "../../../components/Chats-component";
 export default async function Room({ params }: { params: { slug: number } }) {
 
     
-
     return(
         <div className="h-screen w-screen bg-black flex flex-col items-center justify-center">
 

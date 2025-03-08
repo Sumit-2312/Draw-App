@@ -104,6 +104,8 @@ wss.on("connection", function connection(socket: WebSocket, request) {
             
            else  if (data.type === "chat") {
                 console.log("Entered in chat endpoint in ws server")
+                console.log(data.roomId);
+                console.log(decoded.id);
                 try {
                     const isMember = await PsClient.roomMember.findFirst({
                         where:{
