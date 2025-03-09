@@ -2,6 +2,7 @@
 
 import {  useEffect, useRef, useState } from "react";
 import axios from 'axios';
+import { isPointInCircle,isPointNearLine,isPointNearPencil,isPointInRectangle } from "@/component/functions";
 
 type DrawnShape = {
   type: "rectangle";
@@ -39,84 +40,7 @@ export default function Page({params}:{params: {roomId : string}}) {
   const [isErasing, setIsErasing] = useState(false);
   const [socket , setSocket] = useState<WebSocket>();
   const [continuedPencil,setContinuedPencil] = useState(false); // to check if the pencil is continued or not
-
-  
-
-  // Check if a point is inside a rectangle
-  const isPointInRectangle = (
-    px: number, py: number, 
-    rx: number, ry: number, 
-    rw: number, rh: number
-  ): boolean => {
-    return px >= rx && px <= rx + rw && py >= ry && py <= ry + rh;
-  };
-
-  // Check if a point is inside a circle
-  const isPointInCircle = (
-    px: number, py: number, 
-    cx: number, cy: number, 
-    radius: number
-  ): boolean => {
-    const dx = px - cx;
-    const dy = py - cy;
-    return dx * dx + dy * dy <= radius * radius;
-  };
-
-  // Check if a point is near a line
-  const isPointNearLine = (
-    px: number, py: number, 
-    x1: number, y1: number, 
-    x2: number, y2: number, 
-    threshold: number = 5
-  ): boolean => {
-    // Calculate distance from point to line
-    const A = px - x1;
-    const B = py - y1;
-    const C = x2 - x1;
-    const D = y2 - y1;
-    
-    const dot = A * C + B * D;
-    const len_sq = C * C + D * D;
-    let param = -1;
-    
-    if (len_sq !== 0) // in case of 0 length line
-      param = dot / len_sq;
-    
-    let xx, yy;
-    
-    if (param < 0) {
-      xx = x1;
-      yy = y1;
-    } else if (param > 1) {
-      xx = x2;
-      yy = y2;
-    } else {
-      xx = x1 + param * C;
-      yy = y1 + param * D;
-    }
-    
-    const dx = px - xx;
-    const dy = py - yy;
-    
-    return Math.sqrt(dx * dx + dy * dy) <= threshold;
-  };
-
-  const isPointNearPencil = (
-    px:number , py: number, points: {x:number, y: number}[]
-  ){
-    const threshold = 5; // distance threshold to consider point near the pencil line
-    for(let i = 0; i < points.length - 1; i++){
-      const x1 = points[i].x;
-      const y1 = points[i].y;
-      const x2 = points[i+1].x;
-      const y2 = points[i+1].y;
-
-      if(isPointNearLine(px,py,x1,y1,x2,y2,threshold)){
-        return true;
-      }
-    }
-    return false;
-  }
+  const [recivedlocation,setrecivedlocatoin] = useState<{x:number,y:number} | null>({x:-10,y:-10});
 
 
   const reRenderCanvas = (ctx: any, canvas: any) => {
@@ -163,8 +87,6 @@ export default function Page({params}:{params: {roomId : string}}) {
     });
   };
   
-
-
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -194,8 +116,11 @@ export default function Page({params}:{params: {roomId : string}}) {
       
       // Handle eraser functionality
       if (shape === "eraser") {
+        setIsErasing(true);  // Set erasing mode
+        setIsDrawing(false); // Stop drawing when erasing
         // Check for shapes under the eraser and remove them
         const updatedShapes = drawnShapes.filter((shape) => {  // drawnshapes would be an array of shapes that will be rendered on the canvas whenever there is a change in the drawnshapes state
+
           if (shape.type === 'rectangle') {
              // this will return true if cursor lies in the rectangle 
             // if it returns true, then we need to remove the rectangle from the drawnshapes array and send a message to the ws server with type delete and id of the rectangle which we are sending to the database while storing the shape
@@ -208,34 +133,36 @@ export default function Page({params}:{params: {roomId : string}}) {
               }))
               return false; // Remove this shape
             }
-
             return true;
           }
           else if (shape.type === 'circle') {
-            if(!isPointInCircle(x, y, shape.x, shape.y, shape.radius)){
+            if(isPointInCircle(x, y, shape.x, shape.y, shape.radius)){
               socket?.send(JSON.stringify({
                 type: "delete",
-                shapeId : shape.id
+                shapeId : shape.id,
+                roomId :  params.roomId
               }))
               return false; // Remove this shape  
             }
             return true; 
           }
           else if (shape.type === 'line') {
-            if(!isPointNearLine(x, y, shape.x1, shape.y1, shape.x2, shape.y2)){
+            if(isPointNearLine(x, y, shape.x1, shape.y1, shape.x2, shape.y2)){
               socket?.send(JSON.stringify({
                 type: "delete",
-                shapeId : shape.id
+                shapeId : shape.id,
+                roomId :  params.roomId
               }))
               return false; // Remove this shape  
             }
             return true;
           }
           else if(shape.type === 'pencil'){
-            if(!isPointNearPencil(x,y,shape.points)){
+            if(isPointNearPencil(x,y,shape.points)){
               socket?.send(JSON.stringify({
                 type: "delete",
-                shapeId : shape.id
+                shapeId : shape.id,
+                roomId :  params.roomId
               }))
               return false; // Remove this shape  
             }
@@ -243,6 +170,8 @@ export default function Page({params}:{params: {roomId : string}}) {
           }
           return true;
         });
+        console.log("Length of updated Shapes: ",updatedShapes.length);
+        console.log("Lenght of drawn Shapes: ",drawnShapes.length);
         
         // Update the shapes array if any shape was deleted
         if (updatedShapes.length !== drawnShapes.length) {
@@ -280,7 +209,7 @@ export default function Page({params}:{params: {roomId : string}}) {
               socket?.send(JSON.stringify({
                 type: "delete",
                 shapeId : shape.id,
-                roomId : params.roomId
+                roomId : ( params).roomId
               }))
               return false; // Remove this shape
             }
@@ -288,30 +217,33 @@ export default function Page({params}:{params: {roomId : string}}) {
             return true;
           }
           else if (shape.type === 'circle') {
-            if(!isPointInCircle(x, y, shape.x, shape.y, shape.radius)){
+            if(isPointInCircle(x, y, shape.x, shape.y, shape.radius)){
               socket?.send(JSON.stringify({
                 type: "delete",
-                shapeId : shape.id
+                shapeId : shape.id,
+                roomId :  params.roomId
               }))
               return false; // Remove this shape  
             }
             return true; 
           }
           else if (shape.type === 'line') {
-            if(!isPointNearLine(x, y, shape.x1, shape.y1, shape.x2, shape.y2)){
+            if(isPointNearLine(x, y, shape.x1, shape.y1, shape.x2, shape.y2)){
               socket?.send(JSON.stringify({
                 type: "delete",
-                shapeId : shape.id
+                shapeId : shape.id,
+                roomId :  params.roomId
               }))
               return false; // Remove this shape  
             }
             return true;
           }
           else if(shape.type === 'pencil'){
-            if(!isPointNearPencil(x,y,shape.points)){
+            if(isPointNearPencil(x,y,shape.points)){
               socket?.send(JSON.stringify({
                 type: "delete",
-                shapeId : shape.id
+                shapeId : shape.id,
+                roomId :  params.roomId
               }))
               return false; // Remove this shape  
             }
@@ -320,7 +252,8 @@ export default function Page({params}:{params: {roomId : string}}) {
           return true;
         });
 
-        
+        console.log("Length of updated Shapes: ",updatedShapes.length);
+        console.log("Lenght of drawn Shapes: ",drawnShapes.length);
         
         // Update the shapes array if any shape was deleted
         if (updatedShapes.length !== drawnShapes.length) {
@@ -525,9 +458,9 @@ export default function Page({params}:{params: {roomId : string}}) {
     };
   }, [isDrawing, drawnShapes, shape, isErasing]);
 
-
   // @ts-ignore
   useEffect(()=>{
+
     const insideFunction = async()=>{
           
         // first fetch all the shapes from the backend
@@ -574,50 +507,84 @@ export default function Page({params}:{params: {roomId : string}}) {
               return prev.filter(shape => shape.id !== shapeId);
             });
           }
+          else if(data.type === 'cursor'){
+            const {x,y} = data.location;
+            setrecivedlocatoin({x,y})
+          }
         }
     }
     insideFunction();
+
   },[]);
 
+  useEffect(()=>{
+    const handleMouseMove = (e:MouseEvent)=>{
+      const x = e.clientX;
+      const y = e.clientY;
+      socket?.send(JSON.stringify({
+        type: "cursor",
+        location : {x,y},
+        roomId : params.roomId
+      }))
+      // console.log(x,y)
+    }
+    window.addEventListener('mousemove',handleMouseMove)
+    return (()=>{
+      window.removeEventListener('mousemove',handleMouseMove);
+    })
+  },[socket]);
 
-  if(!socket) return  <div className="flex justify-center items-center h-64">
-  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-</div>
 
   return (
+    <div className="relative h-screen w-screen bg-black">
 
-    <div className="relative h-screen w-screen bg-white">
-      <canvas 
-        ref={canvasRef} 
-        id="canvas" 
-        className="bg-black h-full w-full"
-      />
+      <div className={`absolute bg-white h-3 w-3 rounded-full z-10 cursor`} 
+       style={{
+        top: `${recivedlocation?.y}px`,
+        left: `${recivedlocation?.x}px`,
+      }}
+      >
+      </div>
 
-      <div className="absolute top-[1%] left-1/2 -translate-x-1/2 border-[0.1px] rounded h-10 px-5 overflow-hidden flex items-center gap-5 ">
-       
-        <div onClick={() => setShape("rectangle")} className="h-full w-[50px] hover:cursor-pointer flex items-center justify-center">
+     {(!socket) ?  <div className="flex justify-center items-center h-64">
+                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                   </div>: 
+                   <canvas 
+                      ref={canvasRef} 
+                      id="canvas" 
+                      className="bg-black h-full w-full"
+                    />
+    }
+  <div className="absolute top-[1%]  left-1/2 -translate-x-1/2 border-[0.1px] rounded py-2 px-5 overflow-hidden flex items-center gap-5 ">
+        <div onClick={() => setShape("rectangle")} className="h-full   w-[50px] hover:cursor-pointer flex flex-col items-center ">
           <div 
             className={`cursor-pointer ${shape === "rectangle" ? "text-yellow-300" : "text-white"} h-5 w-5 border`}
           >
           </div>
+          <div className="  text-[10px]">
+            Rectangle
+          </div>
         </div>
-
-        <div onClick={() => setShape("circle")} className="h-full w-[50px] hover:cursor-pointer flex items-center justify-center">
+        <div onClick={() => setShape("circle")} className="h-full w-[50px] hover:cursor-pointer flex  flex-col items-center justify-center">
           <div  
             className={`cursor-pointer ${shape === "circle" ? "text-yellow-300" : "text-white"} h-5 w-5 border rounded-full`}
           >
           </div>
+          <div className="  text-[10px]">
+            circle
+          </div>
         </div>
-
-        <div onClick={() => setShape("line")} className="h-full w-[50px] hover:cursor-pointer flex items-center justify-center">
+        <div onClick={() => setShape("line")} className="h-full w-[50px] hover:cursor-pointer flex flex-col not-only-of-type:items-center justify-center">
           <div  
             className={`cursor-pointer h-5 ${shape === "line" ? "text-yellow-300" : "text-white"} rotate-45 border rounded-full`}
           >
           </div>
+          <div className="  text-[10px]">
+            line
+          </div>
         </div>
-
         {/* Eraser Tool */}
-        <div onClick={() => setShape("eraser")} className="h-full w-[50px] hover:cursor-pointer flex items-center justify-center">
+        <div onClick={() => setShape("eraser")} className="h-full w-[50px] hover:cursor-pointer flex flex-col items-center justify-center">
           <div  
             className={`cursor-pointer h-5 w-5 flex items-center justify-center ${shape === "eraser" ? "text-yellow-300" : "text-white"}`}
           >
@@ -627,9 +594,11 @@ export default function Page({params}:{params: {roomId : string}}) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 19h4l7-7 7 7H3z" />
             </svg>
           </div>
+          <div className="  text-[10px]">
+            eraser
+          </div>
         </div>
-
-        <div onClick={() => setShape("pencil")} className="h-full w-[50px] hover:cursor-pointer flex items-center justify-center">
+        <div onClick={() => setShape("pencil")} className="h-full w-[50px] hover:cursor-pointer flex flex-col items-center justify-center">
           <div className={`cursor-pointer h-5 w-5 flex items-center justify-center ${shape === "pencil" ? "text-yellow-300" : "text-white"}`}>
             {/* Simple pencil icon */}
             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none">
@@ -637,9 +606,10 @@ export default function Page({params}:{params: {roomId : string}}) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5l4 4" />
             </svg>
           </div>
+          <div className="  text-[10px]">
+            pencil
+          </div>  
         </div>
-
-        
       </div>
     </div>
   );

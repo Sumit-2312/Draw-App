@@ -178,10 +178,12 @@ wss.on("connection", function connection(socket: WebSocket, request) {
                     } 
 
                     else if (data.type === "delete"){
+                        console.log("entered in delete section")
                         // here we must have the message like: type: "delete", shapeId : shapeId
                         // we will get these two from the message and the userId from the token in decoded.id
                         // we will traverse through the database and delete that shape and also send the message to all other subscribed users
                         const shapeId = data.shapeId;
+                        console.log("ShapeId: " ,shapeId)
                         // we will first find the entry in chat in which message field (json string) contains the shapeId
                         const chatEntry = await PsClient.chat.findFirst({
                             where: {
@@ -190,11 +192,13 @@ wss.on("connection", function connection(socket: WebSocket, request) {
                                 }
                             }
                         });
-                        
+
                         if (chatEntry) {
-                            await PsClient.chat.delete({
-                                where: { id: chatEntry.id } // Now we delete using the unique ID
-                        });
+                                console.log("chat entry is founded")
+                                await PsClient.chat.delete({
+                                    where: { id: chatEntry.id } // Now we delete using the unique ID
+                                });
+                        }
 
                         // after deleting the chat from the database we will send the shapeid to be deleted  to the frontend to all the users withe the same roomid
                         users.forEach((user)=>{
@@ -214,15 +218,29 @@ wss.on("connection", function connection(socket: WebSocket, request) {
                                 console.log(user)
                             }
                         });
+                        console.log("passed the for loop");
                         
                     }
                     
-                    else {
-                        socket.send(JSON.stringify({
-                            message: "Entered wrong type"
-                        }));
-                        return;
-                    }
+                    else if ( data.type === 'cursor'){
+
+                        users.forEach((user)=>{
+                            if (Array.isArray(user.roomId) && user.roomId.includes(data.roomId) && user.ws != socket ) {
+                                if (user.ws.readyState === WebSocket.OPEN) {
+                                    user.ws.send(JSON.stringify({
+                                        type: "cursor",
+                                        location: data.location,
+                                        roomId : Number(data.roomId)
+                                    }));
+                                    console.log(`📩 Message sent to user ${user.userId} in room ${data.roomId}`);
+                                } else {
+                                    console.log(`⚠️ Cannot send message, WebSocket is closed for user ${user.userId}`);
+                                }
+                            } else {
+                                console.log(`❌ User ${user.userId} is NOT in room ${data.roomId}, message not sent.`);
+                                console.log(user)
+                            }
+                        });
                     }
                     
                     else {
