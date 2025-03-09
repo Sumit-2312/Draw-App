@@ -40,7 +40,9 @@ export default function Page({params}:{params: {roomId : string}}) {
   const [isErasing, setIsErasing] = useState(false);
   const [socket , setSocket] = useState<WebSocket>();
   const [continuedPencil,setContinuedPencil] = useState(false); // to check if the pencil is continued or not
-  const [recivedlocation,setrecivedlocatoin] = useState<{x:number,y:number} | null>({x:-10,y:-10});
+  const [recivedlocation,setrecivedlocatoin] = useState<{x:number,y:number} | null>({x:-100,y:-100});
+  const [username ,setUsername] = useState("");
+  const [otheruser,setotheruser] = useState("");
 
 
   const reRenderCanvas = (ctx: any, canvas: any) => {
@@ -442,12 +444,20 @@ export default function Page({params}:{params: {roomId : string}}) {
       setIsDrawing(false);
       setStartPoint(null);
     };
+
+    const handleResize = () => {
+      if (!canvas) return;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      reRenderCanvas(ctx,canvas);
+    }
     
     // Attach Event Listeners
     canvas.addEventListener("mousedown", startDrawing);
     canvas.addEventListener("mousemove", draw);
     canvas.addEventListener("mouseup", stopDrawing);
     canvas.addEventListener("mouseout", stopDrawing);
+    window.addEventListener("resize",handleResize)
 
     // Cleanup Event Listeners on Unmount
     return () => {
@@ -455,6 +465,7 @@ export default function Page({params}:{params: {roomId : string}}) {
       canvas.removeEventListener("mousemove", draw);
       canvas.removeEventListener("mouseup", stopDrawing);
       canvas.removeEventListener("mouseout", stopDrawing);
+      window.removeEventListener("resize",handleResize);
     };
   }, [isDrawing, drawnShapes, shape, isErasing]);
 
@@ -479,6 +490,18 @@ export default function Page({params}:{params: {roomId : string}}) {
             return [...prev,message]
           })
         }) 
+
+
+        // fetch the username 
+
+        const responseUser = await axios.get(`http://localhost:3001/user/userId`,{
+          headers:{
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+        });
+        const dataUser = responseUser.data;
+        setUsername(dataUser.userName);
+        console.log("Username: ",dataUser.userName);
 
 
         // establish a connection with the websocket server
@@ -510,6 +533,7 @@ export default function Page({params}:{params: {roomId : string}}) {
           else if(data.type === 'cursor'){
             const {x,y} = data.location;
             setrecivedlocatoin({x,y})
+            setotheruser(data.username);
           }
         }
     }
@@ -524,26 +548,37 @@ export default function Page({params}:{params: {roomId : string}}) {
       socket?.send(JSON.stringify({
         type: "cursor",
         location : {x,y},
-        roomId : params.roomId
+        roomId : params.roomId,
+        username : username
       }))
-      // console.log(x,y)
     }
     window.addEventListener('mousemove',handleMouseMove)
+    
     return (()=>{
       window.removeEventListener('mousemove',handleMouseMove);
     })
-  },[socket]);
+  },[socket,username]);
 
 
   return (
-    <div className="relative h-screen w-screen bg-black">
+    <div className="relative overflow-hidden h-screen w-screen bg-black">
 
-      <div className={`absolute bg-white h-3 w-3 rounded-full z-10 cursor`} 
-       style={{
-        top: `${recivedlocation?.y}px`,
-        left: `${recivedlocation?.x}px`,
-      }}
-      >
+      <div className="absolute text-white flex flex-col items-center"
+        style={{
+          top: `${(recivedlocation?.y ?? 0) + 5}px`,
+          left: `${(recivedlocation?.x ?? 0) + 5}px`,
+        }}>
+         
+          
+          <div className="text-white text-xl">
+            <div className="">
+                <svg className="fill-white w-5 h-5" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                  <polygon points="50,10 90,70 10,70" transform="rotate(-45, 50, 50)" />
+                </svg>
+            </div>
+            {otheruser}
+          </div>
+          
       </div>
 
      {(!socket) ?  <div className="flex justify-center items-center h-64">
@@ -552,10 +587,11 @@ export default function Page({params}:{params: {roomId : string}}) {
                    <canvas 
                       ref={canvasRef} 
                       id="canvas" 
-                      className="bg-black h-full w-full"
+                      className="bg-black h-full w-full overflow-hidden"
                     />
     }
-  <div className="absolute top-[1%]  left-1/2 -translate-x-1/2 border-[0.1px] rounded py-2 px-5 overflow-hidden flex items-center gap-5 ">
+
+    <div className="absolute top-[1%]  left-1/2 -translate-x-1/2 border-[0.1px] rounded py-2 px-5 overflow-hidden flex items-center gap-5 ">
         <div onClick={() => setShape("rectangle")} className="h-full   w-[50px] hover:cursor-pointer flex flex-col items-center ">
           <div 
             className={`cursor-pointer ${shape === "rectangle" ? "text-yellow-300" : "text-white"} h-5 w-5 border`}

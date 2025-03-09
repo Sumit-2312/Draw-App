@@ -230,7 +230,8 @@ wss.on("connection", function connection(socket: WebSocket, request) {
                                     user.ws.send(JSON.stringify({
                                         type: "cursor",
                                         location: data.location,
-                                        roomId : Number(data.roomId)
+                                        roomId : Number(data.roomId),
+                                        username : data.username
                                     }));
                                     console.log(`📩 Message sent to user ${user.userId} in room ${data.roomId}`);
                                 } else {

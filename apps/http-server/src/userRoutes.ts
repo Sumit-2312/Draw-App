@@ -288,8 +288,14 @@ userRouter.get("/chat/:slug",auth,async(req,res)=>{
 
 userRouter.get("/userId",auth,async(req,res )=>{
     const {userId} = req.body;
+    const user = await PsClient.user.findFirst({
+        where:{
+            id: userId
+        }
+    })
     res.status(200).json({
-        userId : userId
+        userId : userId,    
+        userName : user?.username
     })
     return;
 })

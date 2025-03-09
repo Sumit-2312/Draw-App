@@ -84,7 +84,7 @@ export default function MyRooms() {
         </div>
       </header>
 
-    <main className='px-80 border flex flex-col gap-10 border-black min-h-screen  py-10'>
+    <main className='2xl:px-80 items-center border flex flex-col gap-10 border-black min-h-screen  py-10'>
 
     {/* Search section */}
       <div className=' relative w-fit flex text-black border border-zinc-400 justify-between items-center px-5 py-3 rounded '>
@@ -100,7 +100,7 @@ export default function MyRooms() {
     {isLoading? <div className="flex justify-center items-center h-64">
                         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                  </div>:
-                 <div className='grid sm:grid-cols-1 md:grid-cols-3 gap-10 mt-10'>
+                 <div className='grid sm:grid-cols-1 2xl:grid-cols-3 gap-10 mt-10'>
                         {filtered.map((room,index)=>{
                                 {/* @ts-ignore */}
                             return <Link key={index} href={`/draw/${room.id}`}>
