@@ -23,7 +23,11 @@ type DrawnShape = {
   x2: number;
   y2: number;
   id: string;
-} 
+} | {
+  type: "pencil";
+  points: { x: number; y: number }[];
+  id: string;
+}
 
 export default function Page({params}:{params: {roomId : string}}) {
   
@@ -33,7 +37,8 @@ export default function Page({params}:{params: {roomId : string}}) {
   const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
   const [drawnShapes, setDrawnShapes] = useState<DrawnShape[]>([]);
   const [isErasing, setIsErasing] = useState(false);
-  const [socket , setSocket] = useState<WebSocket>()
+  const [socket , setSocket] = useState<WebSocket>();
+  const [continuedPencil,setContinuedPencil] = useState(false); // to check if the pencil is continued or not
 
   
 
@@ -96,6 +101,51 @@ export default function Page({params}:{params: {roomId : string}}) {
     return Math.sqrt(dx * dx + dy * dy) <= threshold;
   };
 
+
+  const reRenderCanvas = (ctx: any, canvas: any) => {
+    // Ensure canvas matches its display size
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+  
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+    // Redraw all existing shapes
+    drawnShapes.forEach((shape) => {
+      ctx.beginPath();
+      ctx.strokeStyle = "white";
+      ctx.lineWidth = 2;
+  
+      if (shape.type === "rectangle") {
+        ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
+      } 
+      else if (shape.type === "circle") {
+        ctx.arc(shape.x, shape.y, shape.radius, 0, Math.PI * 2);
+        ctx.stroke();
+      } 
+      else if (shape.type === "line") {
+        ctx.moveTo(shape.x1, shape.y1);
+        ctx.lineTo(shape.x2, shape.y2);
+        ctx.stroke();
+      } 
+      else if (shape.type === "pencil") {
+        // Draw pencil strokes
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+  
+        shape.points.forEach((point, index) => {
+          if (index === 0) {
+            ctx.moveTo(point.x, point.y);
+          } else {
+            ctx.lineTo(point.x, point.y);
+          }
+        });
+  
+        ctx.stroke();
+      }
+    });
+  };
+  
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -103,32 +153,7 @@ export default function Page({params}:{params: {roomId : string}}) {
     if (!ctx) return;
 
 
-    // Ensure canvas matches its display size
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
-
-    // Clear the canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Redraw all existing shapes
-    drawnShapes.forEach((shape) => {
-      ctx.beginPath();
-      ctx.strokeStyle = "white";
-      ctx.lineWidth = 2;
-
-      if (shape.type === 'rectangle') {
-        ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
-      }
-      else if (shape.type === 'circle') {
-        ctx.arc(shape.x, shape.y, shape.radius, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      else if (shape.type === 'line') {
-        ctx.moveTo(shape.x1, shape.y1);
-        ctx.lineTo(shape.x2, shape.y2);
-        ctx.stroke();
-      }
-    });
+    reRenderCanvas(ctx,canvas);
 
     // If erasing, show eraser cursor
     if (isErasing && shape === "eraser") {
@@ -172,6 +197,12 @@ export default function Page({params}:{params: {roomId : string}}) {
         }
       } else {
         // Normal drawing behavior
+       if(!continuedPencil){
+        setDrawnShapes((prev)=>{
+          return [...prev,{type:"pencil",points:[{x,y}],id:crypto.randomUUID()}]
+        })
+        setContinuedPencil(true);
+       }
         setIsDrawing(true);
         setStartPoint({ x, y });
       }
@@ -237,28 +268,9 @@ export default function Page({params}:{params: {roomId : string}}) {
       // Normal drawing functionality
       if (!isDrawing || !startPoint) return;
       
-      // Clear previous drawing and redraw existing shapes
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // Redraw existing shapes
-      drawnShapes.forEach((shape) => {
-        ctx.beginPath();
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 2;
+      reRenderCanvas(ctx,canvas);  // re-render everything on the canvas 
 
-        if (shape.type === 'rectangle') {
-          ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
-        }
-        else if (shape.type === 'circle') {
-          ctx.arc(shape.x, shape.y, shape.radius, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-        else if (shape.type === 'line') {
-          ctx.moveTo(shape.x1, shape.y1);
-          ctx.lineTo(shape.x2, shape.y2);
-          ctx.stroke();
-        }
-      });
       // Draw current shape in progress
       ctx.beginPath();
       ctx.strokeStyle = "white";
@@ -271,7 +283,7 @@ export default function Page({params}:{params: {roomId : string}}) {
         ctx.strokeRect(
           width >= 0 ? startPoint.x : x, 
           height >= 0 ? startPoint.y : y, 
-          Math.abs(width), 
+          Math.abs(width),
           Math.abs(height)
         );
       }
@@ -292,12 +304,41 @@ export default function Page({params}:{params: {roomId : string}}) {
         ctx.lineTo(x, y);
         ctx.stroke();
       }
+      else if (shape === "pencil") {
+        if (!isDrawing) return; // Ensure drawing only happens when mouse is down
+      
+        const newPoint = { x, y };
+      
+        // Add the new point to the current stroke
+        const updatedShapes = [...drawnShapes];   // here the array of all the shapes will be shallow copied in the updateshapes
+        // if user is using the pencil then the last updated shape will be the pencil shape
+        const lastShape = updatedShapes[updatedShapes.length - 1];  // here we are getting the last shape from the updatedshapes array
+        // if the last shape is pencil then we will push the new point to the points array of the last shape
+      
+        if (lastShape?.type === "pencil" && continuedPencil) {
+          lastShape.points.push(newPoint);   // push the last point to the points array of the last shape
+        } else {
+          // If no active stroke, create a new one
+          updatedShapes.push({ type: "pencil", points: [startPoint, newPoint], id: crypto.randomUUID() });
+        }
+      
+        setDrawnShapes(updatedShapes); // Update state with new stroke data
+        setStartPoint(newPoint); // Update start point
+      
+        // Redraw everything on canvas
+        reRenderCanvas(ctx,canvas);
+      }
+      
     };
+
     const stopDrawing = async(e: MouseEvent) => {
       // End erasing mode
       if (isErasing) {
         setIsErasing(false);
         return;
+      }
+      if(continuedPencil){
+        setContinuedPencil(false);
       }
       
       if (!isDrawing || !startPoint) return;
@@ -382,6 +423,23 @@ export default function Page({params}:{params: {roomId : string}}) {
           id: uniqueId
         }]);
       }
+      else if(shape === 'pencil'){
+        interface pencilShape {
+          type: "pencil"
+          points : {x: number,y:number}[],
+          id: string
+        }
+        const Lastshape:pencilShape = drawnShapes[drawnShapes.length -1] as pencilShape; // this would definately be the pencil shape
+        socket?.send(JSON.stringify({
+          type: "chat",
+          roomId: roomId,
+          message: JSON.stringify({
+            type: "pencil",
+            points: Lastshape.points,
+            id: uniqueId
+          })
+        }))
+      }
       
       setIsDrawing(false);
       setStartPoint(null);
@@ -423,6 +481,7 @@ export default function Page({params}:{params: {roomId : string}}) {
             return [...prev,message]
           })
         }) 
+
 
         // establish a connection with the websocket server
         const wss = new WebSocket(`ws://localhost:8080?token=${localStorage.getItem("token")}`);
@@ -504,6 +563,17 @@ export default function Page({params}:{params: {roomId : string}}) {
             </svg>
           </div>
         </div>
+
+        <div onClick={() => setShape("pencil")} className="h-full w-[50px] hover:cursor-pointer flex items-center justify-center">
+          <div className={`cursor-pointer h-5 w-5 flex items-center justify-center ${shape === "pencil" ? "text-yellow-300" : "text-white"}`}>
+            {/* Simple pencil icon */}
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16.586 3.414a2 2 0 0 1 2.828 0l1.172 1.172a2 2 0 0 1 0 2.828L9 19H5v-4L16.586 3.414z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5l4 4" />
+            </svg>
+          </div>
+        </div>
+
         
       </div>
     </div>
