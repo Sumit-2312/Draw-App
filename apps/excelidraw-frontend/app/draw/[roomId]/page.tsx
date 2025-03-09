@@ -101,6 +101,23 @@ export default function Page({params}:{params: {roomId : string}}) {
     return Math.sqrt(dx * dx + dy * dy) <= threshold;
   };
 
+  const isPointNearPencil = (
+    px:number , py: number, points: {x:number, y: number}[]
+  ){
+    const threshold = 5; // distance threshold to consider point near the pencil line
+    for(let i = 0; i < points.length - 1; i++){
+      const x1 = points[i].x;
+      const y1 = points[i].y;
+      const x2 = points[i+1].x;
+      const y2 = points[i+1].y;
+
+      if(isPointNearLine(px,py,x1,y1,x2,y2,threshold)){
+        return true;
+      }
+    }
+    return false;
+  }
+
 
   const reRenderCanvas = (ctx: any, canvas: any) => {
     // Ensure canvas matches its display size
@@ -146,6 +163,8 @@ export default function Page({params}:{params: {roomId : string}}) {
     });
   };
   
+
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -175,18 +194,52 @@ export default function Page({params}:{params: {roomId : string}}) {
       
       // Handle eraser functionality
       if (shape === "eraser") {
-        setIsErasing(true);
-        
-        // Check if the click point intersects with any shape and remove it
-        const updatedShapes = drawnShapes.filter((shape) => {
+        // Check for shapes under the eraser and remove them
+        const updatedShapes = drawnShapes.filter((shape) => {  // drawnshapes would be an array of shapes that will be rendered on the canvas whenever there is a change in the drawnshapes state
           if (shape.type === 'rectangle') {
-            return !isPointInRectangle(x, y, shape.x, shape.y, shape.width, shape.height);
+             // this will return true if cursor lies in the rectangle 
+            // if it returns true, then we need to remove the rectangle from the drawnshapes array and send a message to the ws server with type delete and id of the rectangle which we are sending to the database while storing the shape
+            if(isPointInRectangle(x, y, shape.x, shape.y, shape.width, shape.height)){
+              // in the database we will traverse through the chats and remove the chat with the shapeId we will provide in the message
+              socket?.send(JSON.stringify({
+                type: "delete",
+                shapeId : shape.id,
+                roomId : params.roomId
+              }))
+              return false; // Remove this shape
+            }
+
+            return true;
           }
           else if (shape.type === 'circle') {
-            return !isPointInCircle(x, y, shape.x, shape.y, shape.radius);
+            if(!isPointInCircle(x, y, shape.x, shape.y, shape.radius)){
+              socket?.send(JSON.stringify({
+                type: "delete",
+                shapeId : shape.id
+              }))
+              return false; // Remove this shape  
+            }
+            return true; 
           }
           else if (shape.type === 'line') {
-            return !isPointNearLine(x, y, shape.x1, shape.y1, shape.x2, shape.y2);
+            if(!isPointNearLine(x, y, shape.x1, shape.y1, shape.x2, shape.y2)){
+              socket?.send(JSON.stringify({
+                type: "delete",
+                shapeId : shape.id
+              }))
+              return false; // Remove this shape  
+            }
+            return true;
+          }
+          else if(shape.type === 'pencil'){
+            if(!isPointNearPencil(x,y,shape.points)){
+              socket?.send(JSON.stringify({
+                type: "delete",
+                shapeId : shape.id
+              }))
+              return false; // Remove this shape  
+            }
+            return true;
           }
           return true;
         });
@@ -254,8 +307,20 @@ export default function Page({params}:{params: {roomId : string}}) {
             }
             return true;
           }
+          else if(shape.type === 'pencil'){
+            if(!isPointNearPencil(x,y,shape.points)){
+              socket?.send(JSON.stringify({
+                type: "delete",
+                shapeId : shape.id
+              }))
+              return false; // Remove this shape  
+            }
+            return true;
+          }
           return true;
         });
+
+        
         
         // Update the shapes array if any shape was deleted
         if (updatedShapes.length !== drawnShapes.length) {
@@ -580,7 +645,3 @@ export default function Page({params}:{params: {roomId : string}}) {
   );
 }
 
-
-// whenever user comes to the page, it should fetch the data from the server which will consist of the shapes drawn by the user
-// whenever user draws a shape, it should be sent to the server and saved in the database
-// whenever user erases a shape, it should be sent to the server and deleted from the database
