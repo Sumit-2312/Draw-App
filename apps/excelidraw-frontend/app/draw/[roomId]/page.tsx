@@ -93,9 +93,23 @@ export default function Page({params}:{params: {roomId : string}}) {
             ctx.lineTo(point.x, point.y);
           }
         });
-  
+
+
         ctx.stroke();
       }
+
+
+      else if(shape.type === 'text'){
+        ctx.fillStyle = "white";
+        ctx.font = shape.font; 
+        
+        const lines = shape.text.split("\n");  // this will split the text into lines like ["hello","world"]
+        let lineHeight = parseInt(shape.fontSize, 10) + 5; // get 16 + 4, will be used to have a gap between the lines
+        lines.forEach((line, index) => {
+            ctx.fillText(line, shape.x, shape.y + index * lineHeight);
+        });
+      }
+
     });
   };
   
@@ -231,6 +245,22 @@ export default function Page({params}:{params: {roomId : string}}) {
           setShape(" ");
       
           console.log("Multiline text input created", textArea);
+
+          textArea.addEventListener("blur", () => {
+            const textValue = textArea.value.trim(); // Trim spaces to avoid empty text
+            if (textValue) { // Only draw if text is not empty
+                setDrawnShapes((prev)=>{
+                  return [...prev,{type:"text",x,y,text:textValue,font:"16px Arial",fontSize:"16px",color:"white",id:crypto.randomUUID()}]
+                });
+                reRenderCanvas(ctx,canvas);
+            }
+          
+            textArea.remove(); // Remove textarea from the DOM after blurring
+            console.log(" Removed text area");
+        });
+        
+         
+
       }
       
           else{
