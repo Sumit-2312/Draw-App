@@ -3,6 +3,7 @@
 import {  useEffect, useRef, useState } from "react";
 import axios from 'axios';
 import { isPointInCircle,isPointNearLine,isPointNearPencil,isPointInRectangle } from "@/component/functions";
+import { text } from "stream/consumers";
 
 type DrawnShape = {
   type: "rectangle";
@@ -28,6 +29,15 @@ type DrawnShape = {
   type: "pencil";
   points: { x: number; y: number }[];
   id: string;
+} | {
+  type: "text";
+  x: number;
+  y: number;
+  text: string;
+  font: string;
+  fontSize: string;
+  color: string;
+  id: string;
 }
 
 export default function Page({params}:{params: {roomId : string}}) {
@@ -47,8 +57,8 @@ export default function Page({params}:{params: {roomId : string}}) {
 
   const reRenderCanvas = (ctx: any, canvas: any) => {
     // Ensure canvas matches its display size
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
   
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -101,8 +111,11 @@ export default function Page({params}:{params: {roomId : string}}) {
     // If erasing, show eraser cursor
     if (isErasing && shape === "eraser") {
       canvas.style.cursor = "crosshair";
-    } else {
-      canvas.style.cursor = "default";
+    } else if(shape === 'text'){
+      canvas.style.cursor = "crosshair";
+    }
+    else {
+      canvas.style.cursor = 'default';
     }
 
     const getCanvasCoordinates = (e: MouseEvent) => {
@@ -172,23 +185,67 @@ export default function Page({params}:{params: {roomId : string}}) {
           }
           return true;
         });
-        console.log("Length of updated Shapes: ",updatedShapes.length);
-        console.log("Lenght of drawn Shapes: ",drawnShapes.length);
+
         
         // Update the shapes array if any shape was deleted
         if (updatedShapes.length !== drawnShapes.length) {
           setDrawnShapes(updatedShapes);
         }
       } else {
-        // Normal drawing behavior
-       if(!continuedPencil){
-        setDrawnShapes((prev)=>{
-          return [...prev,{type:"pencil",points:[{x,y}],id:crypto.randomUUID()}]
-        })
-        setContinuedPencil(true);
-       }
-        setIsDrawing(true);
-        setStartPoint({ x, y });
+
+        if (shape === "text") {
+          const textArea = document.createElement("textarea");
+          
+          // Styling
+          textArea.style.position = "absolute";
+          textArea.style.zIndex = "1999";
+          textArea.style.left = `${x}px`;
+          textArea.style.top = `${y}px`;
+          textArea.style.minHeight = "30px";  // Minimum height
+          textArea.style.width = "250px"; 
+          textArea.style.border = "2px solid white";
+          textArea.style.borderRadius = "5px";
+          textArea.style.background = "black";
+          textArea.style.color = "white";
+          textArea.style.padding = "5px";
+          textArea.style.fontSize = "16px";
+          textArea.style.resize = "both";  // Allow resizing
+          textArea.style.outline = 'none';
+          textArea.style.border = 'none';
+      
+          // Ensure it can receive focus
+          textArea.tabIndex = 0; 
+
+
+          // Function to auto-adjust height
+          const adjustHeight = () => {
+            textArea.style.height = "auto";  // Reset height to recalculate
+            textArea.style.height = textArea.scrollHeight + "px"; // Set new height
+          };
+        // Adjust height on input
+          textArea.addEventListener("input", adjustHeight);  // this event listner triggers when an input is made in the textarea
+          document.body.appendChild(textArea);
+
+          // Give it focus after ensuring it's added to the DOM
+          setTimeout(() => textArea.focus(), 0);
+          setShape(" ");
+      
+          console.log("Multiline text input created", textArea);
+      }
+      
+          else{
+            if(!continuedPencil){
+              setDrawnShapes((prev)=>{
+                return [...prev,{type:"pencil",points:[{x,y}],id:crypto.randomUUID()}]
+              })
+              setContinuedPencil(true);
+             }
+              setIsDrawing(true);
+              setStartPoint({ x, y });
+          }
+
+
+ 
       }
     };
 
@@ -634,6 +691,7 @@ export default function Page({params}:{params: {roomId : string}}) {
             eraser
           </div>
         </div>
+
         <div onClick={() => setShape("pencil")} className="h-full w-[50px] hover:cursor-pointer flex flex-col items-center justify-center">
           <div className={`cursor-pointer h-5 w-5 flex items-center justify-center ${shape === "pencil" ? "text-yellow-300" : "text-white"}`}>
             {/* Simple pencil icon */}
@@ -646,8 +704,36 @@ export default function Page({params}:{params: {roomId : string}}) {
             pencil
           </div>  
         </div>
+
+        <div 
+          onClick={() => setShape("text")} 
+          className="h-full w-[50px] hover:cursor-pointer flex flex-col items-center justify-center"
+        >
+          <div 
+            className={`cursor-pointer h-5 w-5 flex items-center justify-center ${shape === "text" ? "text-yellow-300" : "text-white"}`}
+          >
+            <svg 
+              width="24" 
+              height="24" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+              stroke={shape === "text" ? "yellow" : "white"} 
+              strokeWidth="2"
+            >
+              <path d="M12 4L4 20H8L10 16H14L16 20H20L12 4Z" fill="none"/>
+              <path d="M10.5 14L13.5 14" stroke={shape === "text" ? "yellow" : "white"} strokeWidth="2"/>
+            </svg>
+          </div>
+          <div className={`text-[10px] ${shape === "text" ? "text-yellow-300" : "text-white"}`}>
+            Text
+          </div>
       </div>
-    </div>
+
+        </div>
+
+      </div>
+    
   );
 }
 
